@@ -1,0 +1,14 @@
+//
+//  adjacencylist.h
+//  
+//
+//  Created by Junhao Su on 10/21/15.
+//
+//
+
+#ifndef adjacencylist_h
+#define adjacencylist_h
+
+#include <stdio.h>
+
+#endif /* adjacencylist_h */
