@@ -1,0 +1,330 @@
+//
+//  adjacencylist.c
+//  
+//
+//  Created by Junhao Su on 10/21/15.
+//
+//
+
+#include "adjacencylist.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+typedef struct n{
+    int v;
+    struct n * next;
+}node;
+
+typedef struct adj{
+    
+    node * head;
+    
+}adjlist;
+
+typedef struct graph{
+    
+    int vertex_num;
+    adjlist * arr;
+
+}graph;
+
+typedef struct queue
+{
+    int data[100];			/*The queue is set to 100 however can be modified to match the actual number of data in the test file*/
+    int front, end;
+}Q;
+
+
+
+/*Function declaration*/
+node * createnode(int n);						
+void BFS(int start, graph * G, int * visited, int count, int * result, int dest);
+graph * creategraph(int num);
+void add_edge (struct graph * g, int src, int dest);
+graph * read(char * file_name, int * count);
+void display(graph * g);
+void equeue(Q * Queue, int x);
+int dqueue(Q * Queue);
+int emp(Q * Queue);
+int full(Q * Queue);
+
+/*create a single node*/
+node * createnode(int n){
+    node * newnode = (node*)malloc(sizeof(node));
+    newnode->v = n;
+    newnode->next = NULL;
+    return newnode;
+};
+
+
+/*create a graph with parameters passed in*/
+graph * creategraph(int num)
+{
+    int idx;
+    graph * g = (graph * )malloc(sizeof(graph));
+    if(!g)
+    {
+        printf("unable to create a graph");
+        return NULL;
+    }
+    
+    g->vertex_num = num;
+    
+    g->arr = (adjlist*)malloc(num * sizeof(adjlist));
+    
+    if(!(g->arr))
+    {
+        printf("unable to create a linked list");
+        return NULL;
+    }
+    
+    for(idx = 0; idx < num; idx++)
+    {
+        (g->arr)[idx].head = NULL;
+    }
+    
+    return g;
+}
+
+
+/*add edge between nodes*/
+void add_edge (struct graph * g, int src, int dest)
+{
+    node * newnode = createnode(dest);
+    node * nnode = g->arr[src].head;
+    int i;
+
+    
+    if(g->arr[src].head == NULL)
+    {
+        g->arr[src].head = newnode;
+        newnode ->next = NULL;
+    }
+    else
+    {
+        if(nnode->next != NULL)
+        {
+            for(i=0;nnode->next != NULL; i++)
+            {
+                nnode = nnode->next;
+            }
+            nnode->next = newnode;
+            newnode->next = NULL;
+        }
+        else
+        {
+            nnode->next = newnode;
+            newnode->next = NULL;
+        }
+    } 
+}
+
+
+/*input file*/
+graph * read(char * file_name, int * count)
+{
+    int i = 0;
+    int temp;
+    int newvalue;
+    char chartemp;
+
+    FILE * fptr;
+    fptr = fopen (file_name, "r");
+
+    if(fptr == NULL)
+    {
+        printf("could not open the file correctly");
+        return NULL;
+    }
+        
+    fscanf(fptr,"%d\n", count);
+    graph * Graph = creategraph(*count);
+    
+    for(i=0;i<*count;i++)
+    {
+            fscanf(fptr, "%d%c",&temp, &chartemp);
+
+            do
+            {
+                fscanf(fptr,"%d%c", &newvalue,&chartemp);
+                add_edge(Graph,temp,newvalue);
+            }while(strncmp(&chartemp,"\n", 1) != 0);                   
+    }
+    fclose(fptr);
+    return Graph;
+}
+
+
+/*print out the file*/
+void display(graph * g)
+{
+    int i;
+    printf("%d\n",g->vertex_num);
+    for(i=0;i<(g->vertex_num);i++)
+    {
+        node * tempnode = g->arr[i].head;
+        printf("%d", i);
+        while(tempnode)
+        {
+            printf("->%d", tempnode->v);
+            tempnode = tempnode->next;
+        }
+        printf("\n");
+    }
+}
+
+
+/*check whether the queue is empty*/
+int emp(Q *Queue)
+{
+    if(Queue->end == -1)
+    {
+        return 1;
+    }
+    return 0;
+}
+
+
+/*check whether the queue is full*/
+int full(Q *Queue)
+{
+    if(Queue->end == 100-1)
+    {
+        return 1;
+    }
+    return 0;
+}
+
+
+/*push number onto queue*/
+void equeue(Q *Queue,int x)
+{
+    if(Queue->end == -1)
+    {
+        Queue->front = 0; 
+        Queue->end = 0;
+        Queue->data[Queue->end] = x;
+    }
+    else
+    {
+        Queue->end = Queue->end + 1;
+        Queue->data[Queue->end] = x;
+    }
+}
+
+
+/*pop number off queue*/
+int dqueue(Q *Queue)
+{
+    int x;
+    x = Queue->data[Queue->front];
+    if(Queue->end == Queue->front)
+    {
+        Queue->end = -1;
+        Queue->front = -1;
+    }
+    else
+    {
+        Queue->front = Queue->front + 1;
+    }
+    return x;
+}
+
+
+/*Breadth first search*/
+void BFS(int start, graph * G, int * visited, int count, int * result, int dest)
+{
+    int w,i, idx = 0;
+    int temparr[100];				//parent array to keep track of the parent node of each node
+    int x;
+    int vertex;
+    Q q;
+    node *p;
+    q.end = -1;
+    q.front = -1;
+    
+    for(i=0;i<count;i++)
+        visited[i] = 0;
+    equeue(&q,start);
+    visited[start] = 1;
+    temparr[start] = -1;
+    printf("The BFS traversal is: %d", start);
+    while(!emp(&q))
+    {
+        vertex = dqueue(&q);
+        for(p = G->arr[vertex].head ; p != NULL ; p = p->next)
+        {
+            w = p->v;
+            if(visited[w] == 0)
+            {
+                equeue(&q,w);
+                visited[w] = 1;
+                printf("->%d",w);
+                temparr[w] = vertex;   
+            }
+        }
+    }
+    
+    printf("\nThe minimum path is %d",dest);
+    
+    while(temparr[dest] != -1)					//reversing the order the traversal until find matched number then output the distance
+    {
+        x = temparr[dest];
+        printf("<-%d", x);
+        temparr[dest] = temparr[x];
+        idx++;
+    }
+    
+    printf("\nThe minimum distance between %d and %d is %d\n", start, dest, idx); 
+}
+
+
+
+int main(int argc, char * argv[])
+{
+    int i;
+    int count;
+    int visited[100];				/*The visit array is set to 100 however can be modified to match the actual number of data in the test file*/
+    int start;
+    int bfs[100];					/*The BFS array is set to 100 however can be modified to match the actual number of data in the test file*/
+    int end;
+    int idx;
+    node * temp;
+    
+    printf("The program is tested with %s \n", argv[1]);
+    if(argc > 1)
+    {
+        start = atoi(argv[2]);
+        end = atoi(argv[3]);
+        graph * gptr = read(argv[1], &count);
+        for(i=0;i<count;i++)
+        {
+            visited[i] = 0;
+        }
+        BFS(start, gptr, visited, count, bfs, end);
+        printf("\n");
+        printf("the original file is : \n");
+        display(gptr);
+       	
+       	for(idx = 0; idx < count; idx++)
+       	{
+		   	while((temp = (((gptr->arr)[idx]).head)) != NULL)
+			{
+				((gptr->arr)[idx]).head = (((gptr->arr)[idx]).head)->next;
+				free(temp);
+			}
+		}
+    	free((gptr->arr));
+    	free(gptr);
+    }
+    else
+    {
+        printf("The command doesn't have enough arguments!\n");
+    }
+
+    return 0;
+    
+}
+
+
